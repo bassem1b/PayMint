@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة PayMint التعليمية</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; background-color: #f0f2f5; color: #1c1e21; }
+        header { background: #1877f2; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 15px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2, h3 { margin-top: 0; color: #1877f2; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+        button { background: #1877f2; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        button:hover { background: #166fe5; }
+        .btn-green { background: #42b72a; }
+        .btn-green:hover { background: #36a420; }
+        .btn-red { background: #e41e3f; width: auto; padding: 8px 15px; font-size: 14px; }
+        .btn-red:hover { background: #c91835; }
+        .btn-outline { background: transparent; border: 1px solid white; width: auto; padding: 6px 12px; font-size: 14px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #e4e6eb; color: #050505; }
+        .tab-btn.active { background: #1877f2; color: white; }
+        .student-badge { background: #e7f3ff; border: 2px dashed #1877f2; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .student-code { font-size: 32px; font-weight: bold; color: #1877f2; letter-spacing: 5px; display: block; margin-top: 5px; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .video-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; display: flex; flex-direction: column; justify-content: space-between; }
+        .video-info { padding: 15px; }
+        .video-title { font-weight: bold; font-size: 17px; margin-bottom: 10px; }
+        .status-locked { color: #e41e3f; font-weight: bold; font-size: 14px; }
+        .status-unlocked { color: #42b72a; font-weight: bold; font-size: 14px; }
+        .hidden { display: none !important; }
+        iframe { width: 100%; height: 400px; border: none; border-radius: 8px; margin-top: 15px; }
+        .admin-link { text-align: center; margin-top: 30px; font-size: 14px; color: #1877f2; cursor: pointer; text-decoration: underline; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>منصة PayMint التعليمية</h1>
+    <button id="logoutBtn" class="btn-outline hidden" onclick="logout()">تسجيل خروج</button>
+</header>
+
+<div class="container">
+
+    <!-- شاشة تسجيل الدخول وإنشاء الحساب -->
+    <div id="authSection" class="card" style="max-width: 450px; margin: 40px auto;">
+        <div class="tabs">
+            <button id="loginTab" class="tab-btn active" onclick="switchAuthTab('login')">تسجيل دخول</button>
+            <button id="registerTab" class="tab-btn" onclick="switchAuthTab('register')">حساب طالب جديد</button>
+        </div>
+
+        <div id="loginForm">
+            <h2>دخول الطلاب</h2>
+            <input type="text" id="loginName" placeholder="اسم الطالب (كما سجلته)">
+            <input type="password" id="loginPass" placeholder="كلمة السر">
+            <button onclick="loginStudent()">دخول للمنصة</button>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <h2>إنشاء حساب جديد</h2>
+            <input type="text" id="regName" placeholder="اكتب اسمك بالكامل">
+            <input type="password" id="regPass" placeholder="اختر كلمة سر">
+            <button class="btn-green" onclick="registerStudent()">إنشاء الحساب واستلام الكود</button>
+        </div>
+
+        <div class="admin-link" onclick="showAdminLogin()">دخول صاحب المنصة (الأدمن)</div>
+    </div>
+
+    <!-- شاشة دخول الأدمن -->
+    <div id="adminLoginSection" class="card hidden" style="max-width: 400px; margin: 40px auto;">
+        <h2>دخول المعلم (الأدمن)</h2>
+        <input type="password" id="adminPassInput" placeholder="أدخل كلمة سر الإدارة">
+        <button onclick="loginAdmin()">دخول لوحة التحكم</button>
+        <div class="admin-link" onclick="backToStudentAuth()">العودة لصفحة الطلاب</div>
+    </div>
+
+    <!-- لوحة الطالب -->
+    <div id="studentDashboard" class="hidden">
+        <div class="student-badge">
+            <span>أهلاً بك يا <strong id="studentNameDisplay"></strong> — كودك الشخصي لتفعيل الحصص هو:</span>
+            <span class="student-code" id="studentCodeDisplay">----</span>
+            <small style="color: #65676b;">احتفظ بهذا الكود وأرسله للمعلم لفتح أي حصة لك</small>
+        </div>
+
+        <!-- مشغل الفيديو -->
+        <div id="videoPlayerBox" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="playingTitle" style="margin:0;">عنوان الحصة</h3>
+                <button class="btn-red" onclick="closePlayer()">إغلاق الفيديو</button>
+            </div>
+            <iframe id="videoFrame" src="" allowfullscreen></iframe>
+        </div>
+
+        <div class="card">
+            <h2>الحصص الدراسية المتاحة</h2>
+            <div id="studentVideosList" class="video-grid">جاري تحميل الحصص...</div>
+        </div>
+    </div>
+
+    <!-- لوحة تحكم الأدمن -->
+    <div id="adminDashboard" class="hidden">
+        <div class="card">
+            <h2>1. تفعيل حصة لطالب</h2>
+            <input type="number" id="targetStudentCode" placeholder="أدخل كود الطالب (4 أرقام)">
+            <select id="selectVideoToUnlock">
+                <option value="">-- اختر الحصة المراد فتحها --</option>
+            </select>
+            <button class="btn-green" onclick="unlockVideoForStudent()">تفعيل الحصة للطالب الآن</button>
+        </div>
+
+        <div class="card">
+            <h2>2. رفع حصة جديدة</h2>
+            <input type="text" id="newVideoTitle" placeholder="عنوان الحصة (مثال: الدرس الأول - مراجعة)">
+            <input type="text" id="newVideoUrl" placeholder="رابط الفيديو (من يوتيوب أو جوجل درايف)">
+            <button onclick="addNewVideo()">نشر الحصة على المنصة</button>
+        </div>
+
+        <div class="card">
+            <h2>3. إدارة الحصص المرفوعة</h2>
+            <div id="adminVideosList">جاري التحميل...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ربط قاعدة بيانات Firebase -->
+<script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, arrayUnion } from "https://gstatic.com";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB9fxZ2EfRjqnQrK_GCiKyqbwPJ3HnBkGk",
+        authDomain: "://firebaseapp.com",
+        projectId: "syntaxpay-bbe83",
+        storageBucket: "syntaxpay-bbe83.firebasestorage.app",
+        messagingSenderId: "217499607406",
+        appId: "1:217499607406:web:b24db8e4318e5bed9f217f",
+        measurementId: "G-LJ2SYQ4235"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const ADMIN_PASSWORD = "admin123";
+    let currentStudent = null;
+
+    window.switchAuthTab = (tab) => {
+        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+        document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+        document.getElementById('registerTab').classList.toggle('active', tab === 'register');
+    };
+
+    window.showAdminLogin = () => {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('adminLoginSection').classList.remove('hidden');
+    };
+
+    window.backToStudentAuth = () => {
+        document.getElementById('adminLoginSection').classList.add('hidden');
+        document.getElementById('authSection').classList.remove('hidden');
+    };
+
+    async function generateUnique4DigitCode() {
+        let isUnique = false;
+        let code = "";
+        while (!isUnique) {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+            const q = query(collection(db, "students"), where("code", "==", code));
+            const snap = await getDocs(q);
+            if (snap.empty) isUnique = true;
+        }
+        return code;
+    }
+
+    window.registerStudent = async () => {
+        const name = document.getElementById('regName').value.trim();
+        const pass = document.getElementById('regPass').value.trim();
+        if (!name || !pass) return alert("يرجى إدخال الاسم وكلمة السر");
+
+        try {
+            const q = query(collection(db, "students"), where("name", "==", name));
+            const existing = await getDocs(q);
+            if (!existing.empty) return alert("هذا الاسم مسجل بالفعل، اختر اسماً آخر أو سجل دخولك");
+
+            const code = await generateUnique4DigitCode();
+            const docRef = await addDoc(collection(db, "students"), {
+                name: name,
+                password: pass,
+                code: code,
+                unlockedVideos: []
+            });
+
+            currentStudent = { id: docRef.id, name, code, unlockedVideos: [] };
+            localStorage.setItem('studentUser', JSON.stringify(currentStudent));
+            alert("تم إنشاء حسابك بنجاح! كودك الشخصي هو: " + code);
+            openStudentDashboard();
+        } catch (err) {
