@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة PayMint التعليمية</title>
+    <!-- مكتبات Firebase الكلاسيكية السريعة -->
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; background-color: #f0f2f5; color: #1c1e21; }
@@ -126,11 +129,7 @@
 
 </div>
 
-<!-- ربط قاعدة بيانات Firebase -->
-<script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, arrayUnion } from "https://gstatic.com";
-
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyB9fxZ2EfRjqnQrK_GCiKyqbwPJ3HnBkGk",
         authDomain: "://firebaseapp.com",
@@ -141,61 +140,65 @@
         measurementId: "G-LJ2SYQ4235"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
     const ADMIN_PASSWORD = "admin123";
     let currentStudent = null;
 
-    window.switchAuthTab = (tab) => {
+    function switchAuthTab(tab) {
         document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
         document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
         document.getElementById('loginTab').classList.toggle('active', tab === 'login');
         document.getElementById('registerTab').classList.toggle('active', tab === 'register');
-    };
+    }
 
-    window.showAdminLogin = () => {
+    function showAdminLogin() {
         document.getElementById('authSection').classList.add('hidden');
         document.getElementById('adminLoginSection').classList.remove('hidden');
-    };
+    }
 
-    window.backToStudentAuth = () => {
+    function backToStudentAuth() {
         document.getElementById('adminLoginSection').classList.add('hidden');
         document.getElementById('authSection').classList.remove('hidden');
-    };
+    }
 
     async function generateUnique4DigitCode() {
         let isUnique = false;
         let code = "";
         while (!isUnique) {
             code = Math.floor(1000 + Math.random() * 9000).toString();
-            const q = query(collection(db, "students"), where("code", "==", code));
-            const snap = await getDocs(q);
+            const snap = await db.collection("students").where("code", "==", code).get();
             if (snap.empty) isUnique = true;
         }
         return code;
     }
 
-    window.registerStudent = async () => {
+    async function registerStudent() {
         const name = document.getElementById('regName').value.trim();
         const pass = document.getElementById('regPass').value.trim();
         if (!name || !pass) return alert("يرجى إدخال الاسم وكلمة السر");
 
         try {
-            const q = query(collection(db, "students"), where("name", "==", name));
-            const existing = await getDocs(q);
+            const existing = await db.collection("students").where("name", "==", name).get();
             if (!existing.empty) return alert("هذا الاسم مسجل بالفعل، اختر اسماً آخر أو سجل دخولك");
 
             const code = await generateUnique4DigitCode();
-            const docRef = await addDoc(collection(db, "students"), {
+            const docRef = await db.collection("students").add({
                 name: name,
                 password: pass,
                 code: code,
                 unlockedVideos: []
             });
 
-            currentStudent = { id: docRef.id, name, code, unlockedVideos: [] };
+            currentStudent = { id: docRef.id, name: name, code: code, unlockedVideos: [] };
             localStorage.setItem('studentUser', JSON.stringify(currentStudent));
             alert("تم إنشاء حسابك بنجاح! كودك الشخصي هو: " + code);
             openStudentDashboard();
         } catch (err) {
+            alert("حدث خطأ: " + err.message);
+        }
+    }
+
+    async function loginStudent() {
+        const name = document.getElementById('loginName').value.trim();
